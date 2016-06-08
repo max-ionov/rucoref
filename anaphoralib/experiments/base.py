@@ -41,7 +41,6 @@ class BaseClassifier(object):
         if random_state:
             self.random_state=random_state
 
-
         if self.x_data and self.y_data:
             tmp_x_data = [self.x_data[i] + [self.groups[i]] for i in xrange(len(self.x_data))]
 
@@ -78,9 +77,9 @@ class BaseClassifier(object):
         return self.clf_.predict(x_test if x_test else self.x_data_test)
 
     def test(self, x_test=None, y_test=None, y_pred=None, test_name='', errors=False):
-        if not x_test:
+        if x_test is None:
             x_test = self.x_data_test
-        if not y_test:
+        if y_test is None:
             y_test = self.y_data_test
 
         y_predicted = self.predict(x_test) if y_pred is None else y_pred
