@@ -1,9 +1,9 @@
 import codecs
 import collections
-from anaphoralib import utils
-from anaphoralib import corpora
+from .. import utils
+from ..corpora import base
 
-class RuCorefCorpus(corpora.Corpus):
+class RuCorefCorpus(base.Corpus):
     def __init__(self, tagset, format):
         super(RuCorefCorpus, self).__init__(tagset, format)
         self.doc_ids = None
@@ -70,7 +70,8 @@ class RuCorefCorpus(corpora.Corpus):
                 self.gs[-1]['groups'][group_id] = {
                     'parent': int(word['link']),
                     'tokens_shifts': [int(sh) for sh in token_shifts],
-                    'tokens_lengths': [len(tok) for tok in head_tokens],
+                    'tokens_lengths': [len(tok) for tok in tokens],
+                    'length': int(word['length']),
                     'attributes': {attr.split(':')[0]: attr.split(':')[1]
                                    for attr in word['attributes'].split('|') if attr},
                     'head_shift': [int(sh) for sh in head_shifts],
