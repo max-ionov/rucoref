@@ -1,0 +1,3 @@
+[submodule "external/reference-coreference-scorers"]
+	path = external/reference-coreference-scorers
+	url = git@github.com:conll/reference-coreference-scorers.git
