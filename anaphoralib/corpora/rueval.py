@@ -9,8 +9,7 @@ class RuCorefCorpus(base.Corpus):
         self.doc_ids = None
         self.gs_doc_ids = None
 
-
-    def load_texts(self, filename):
+    def load_texts(self, filename, n_files=None):
         self.texts = []
         self.doc_ids = []
 
@@ -21,6 +20,8 @@ class RuCorefCorpus(base.Corpus):
             for line in inp_file:
                 word = {pair[0]: pair[1] for pair in zip(fields, line.strip('\r\n').split('\t'))}
                 if int(word['doc_id']) > cur_doc:
+                    if n_files and len(self.doc_ids) == n_files:
+                        break
                     self.texts.append([])
                     cur_doc = int(word['doc_id'])
                     self.doc_ids.append(cur_doc)
@@ -37,7 +38,6 @@ class RuCorefCorpus(base.Corpus):
 
         self.texts_loaded_ = True
 
-
     def load_gs(self, filename):
         self.gs = []
         self.gs_doc_ids = []
@@ -48,14 +48,15 @@ class RuCorefCorpus(base.Corpus):
             fields = inp_file.readline().strip('\r\n').split('\t')
             for line in inp_file:
                 word = {pair[0]: pair[1] for pair in zip(fields, line.strip('\r\n').split('\t'))}
-                #if not word['variant'] == '1':
-                #    continue
 
                 doc_id = int(word['doc_id'])
                 group_id = int(word['group_id'])
                 chain_id = int(word['chain_id'])
 
                 if doc_id > cur_doc:
+                    if doc_id not in self.doc_ids:
+                        break
+
                     cur_doc = doc_id
                     self.gs.append({'chains': collections.defaultdict(list), 'groups': collections.defaultdict(list)})
                     self.gs_doc_ids.append(doc_id)

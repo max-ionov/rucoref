@@ -10,6 +10,7 @@ class Corpus(object):
 
         self.texts = []
         self.gs = []
+        self.doc_ids = []
 
         self.groups = []
         self.mentions = []
@@ -99,31 +100,32 @@ class Corpus(object):
                                                                 n_chains=n_chains,
                                                                 n_words=n_words)
 
-    def export_conll(self, path):
+    def export_conll(self, filename, groups=None, chains=None):
         """Saves the corpus annotation in the CONLL-2012 shared task format"""
-        filename_template='{}.conll.txt'
-
-        #if os.path.exists(path) and not os.path.isdir(path):
-        #    raise AttributeError('Provided path ({}) is not a folder'.format(path))
-        #if not os.path.exists(path):
-        #    os.mkdir(path)
-
         self.create_indices() # just in case there are no words index yet
+        if not groups:
+            groups = [text['groups'] for text in self.gs]
 
-        #filename = os.path.join(path, filename_template.format(i_text))
-        filename = path
+        chains_index = self.chains_index if not chains else [{} for text in self.gs]
+
         with codecs.open(filename, 'w', encoding='utf-8') as out_file:
             for i_text, text in enumerate(self.texts):
-                out_file.write('#begin document (Doc{});\n'.format(i_text))
+                doc_name = 'Doc{}'.format(self.doc_ids[i_text])
+                out_file.write('#begin document ({});\n'.format(doc_name))
                 words_chains_index = collections.defaultdict(list)
                 words_chains_starts = collections.defaultdict(set)
                 words_chains_ends = collections.defaultdict(set)
 
+                if chains:
+                    for chain_id in chains[i_text]:
+                        chain = chains[i_text][chain_id]
+                        chains_index[i_text].update(dict((group_id, chain_id) for group_id in chain))
+
                 group_shifts_index = set()
 
-                for i_group, group_id in enumerate(self.gs[i_text]['groups']):
-                    group = self.gs[i_text]['groups'][group_id]
-                    # CONLL coreference scheme allows only one annotation for a coreference relation
+                for i_group, group_id in enumerate(groups[i_text]):
+                    group = groups[i_text][group_id]
+                    # CoNLL coreference scheme allows only one annotation for a coreference relation
                     # so we need to make sure there are no doubles (there are some in the corpus)
                     if tuple(group['tokens_shifts']) in group_shifts_index:
                         continue
@@ -144,10 +146,10 @@ class Corpus(object):
                                       for group_id in group_ids]
 
                         coref_mark = '|'.join('{}{}{}'.format('(' if group_starts[i] else '',
-                                                              self.chains_index[i_text][group_id],
+                                                              chains_index[i_text][group_id],
                                                               ')' if group_ends[i] else '')
                                               for i, group_id in enumerate(group_ids))
-                    out_file.write(u'{}\t{}\t{}\n{}'.format(i_text, i_word, coref_mark, '\n' if word.tag == 'SENT' else ''))
+                    out_file.write(u'{}\t{}\t{}\n{}'.format(doc_name, i_text, coref_mark, '\n' if word.tag == 'SENT' else ''))
                 out_file.write('#end document\n')
 
 
@@ -180,9 +182,8 @@ class Corpus(object):
                     out_file.write(spaces + ' '.join(word.wordform))
 
             with codecs.open(filename[:-4] + '.ann', 'w', encoding='utf-8') as out_file:
-                # saving NPs or just nouns and pronouns if groups are not detected
-                mentions = utils.find_mentions(self.groups[i_text] if self.groups_loaded_ else self.mentions[i_text],
-                                               self.tagset)
+                mentions = self.get_mentions(i_text)
+
                 for i_group, group in enumerate(mentions):
                     # there is a bug with tokenization of words with some unicode characters in a corpus:
                     # some were tokenized as several consecutive words. In this case we should glue
@@ -240,8 +241,17 @@ class Corpus(object):
         for i_word, word in enumerate(group_words[:-1]):
             group_text += word + u' ' * (group['tokens_shifts'][i_word + 1] - group['tokens_shifts'][i_word] - len(word))
 
-
         return group_text + group_words[-1]
+
+    def get_mentions(self, i_text):
+        """
+        Returns a list of NPs if groups are detected or just nouns and pronouns if not
+        At this point those are all _possible_ mentions, including singletons and non-referential NPs
+        :param i_text: index of a desired text in self.texts
+        :return: a list of mentions
+        """
+        return utils.find_mentions(self.groups[i_text] if self.groups_loaded_ else self.mentions[i_text],
+                                   self.tagset)
 
     def iterate_mentions(self, text_indices=None):
         """Yields every mention from every text which index is not in text_indices"""

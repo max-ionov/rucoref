@@ -8,7 +8,10 @@ import seaborn as sns
 
 
 class BaseClassifier(object):
-    def __init__(self, get_feature_vector=None):
+    """
+    A base class for creating various classifiers like discourse-new or singleton classifiers
+    """
+    def __init__(self):
         self.fitted_ = False
         self.clf_ = None
 
