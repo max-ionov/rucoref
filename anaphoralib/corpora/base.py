@@ -1,6 +1,9 @@
 import collections
 import os
 import codecs
+import subprocess
+import re
+
 from .. import utils
 
 class Corpus(object):
@@ -267,3 +270,35 @@ class Corpus(object):
         if not self.gs_loaded_:
             return False
 
+    def score_coreference(self, groups, chains, metric='all', scorer_path='scorer.pl', perl_path='perl'):
+        tmp_file_gold = 'tmp_score_rucor_gold.txt'
+        tmp_file_test = 'tmp_score_rucor_test.txt'
+
+        rx_metric = re.compile('METRIC ([a-z]+):')
+        rx_score = re.compile('([A-Za-z\- ]+): Recall:.* ([0-9\.]+)%\tPrecision:.* ([0-9\.]+)%\tF1:.* ([0-9\.]+)%')
+
+        scorer_params = [perl_path,
+                         scorer_path,
+                         metric,
+                         tmp_file_gold,
+                         tmp_file_test,
+                         'none']
+        self.export_conll(tmp_file_gold)
+        self.export_conll(tmp_file_test, groups=groups, chains=chains)
+
+        output = subprocess.check_output(scorer_params).split('\n')
+
+        os.remove(tmp_file_gold)
+        os.remove(tmp_file_test)
+
+        scores = collections.defaultdict(dict)
+        for line in output:
+            line = line.strip('\r\n')
+            m = rx_metric.match(line)
+            if m:
+                metric = m.group(1)
+            m = rx_score.match(line)
+            if m:
+                scores[metric][m.group(1)] = (m.group(2), m.group(3), m.group(4))
+
+        return dict(scores)

@@ -31,7 +31,8 @@ class MentionPairClassifier(object):
         chains = {}
 
         for pair in coref_pairs:
-            chains_with_elem = [chains[chain] for chain in chains if pair[1] in chains[chain] or pair[0] in chains[chain]]
+            chains_with_elem = [chains[chain] for chain in chains
+                                if pair[1] in chains[chain] or pair[0] in chains[chain]]
             if len(chains_with_elem) == 0:
                 chains[len(chains) + 1] = set()
                 chains_with_elem.append(chains[len(chains)])
@@ -67,7 +68,7 @@ class MentionPairClassifier(object):
 
     def pair_coreferent(self, pair):
         """
-        This is the deciding function that should be overridden in child classes
+        This is the decision function that should be overridden in child classes
         :param pair: a tuple consisting of two mentions (anaphoralib.utils.Group or anaphoralib.utils.Word)
         :return: True if mentions are coreferent, False otherwise
         """
