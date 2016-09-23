@@ -270,7 +270,8 @@ class Corpus(object):
         if not self.gs_loaded_:
             return False
 
-    def score_coreference(self, groups, chains, metric='all', scorer_path='scorer.pl', perl_path='perl'):
+    def score_coreference(self, groups, chains, metric='all',
+                          scorer_path='scorer.pl', perl_path='perl', heads_only=False):
         tmp_file_gold = 'tmp_score_rucor_gold.txt'
         tmp_file_test = 'tmp_score_rucor_test.txt'
 
@@ -283,13 +284,22 @@ class Corpus(object):
                          tmp_file_gold,
                          tmp_file_test,
                          'none']
-        self.export_conll(tmp_file_gold)
+        if heads_only:
+            gs_heads = [{group_id:
+                                 {
+                                     'parent': text_gs['groups'][group_id]['parent'],
+                                     'tokens_shifts': [text_gs['groups'][group_id]['head_shift'][0]]
+                                 } for group_id in text_gs['groups']} for text_gs in self.gs]
+
+            self.export_conll(tmp_file_gold, groups=gs_heads, chains=[gs['chains'] for gs in self.gs])
+        else:
+            self.export_conll(tmp_file_gold)
         self.export_conll(tmp_file_test, groups=groups, chains=chains)
 
         output = subprocess.check_output(scorer_params).split('\n')
 
-        os.remove(tmp_file_gold)
-        os.remove(tmp_file_test)
+        #os.remove(tmp_file_gold)
+        #os.remove(tmp_file_test)
 
         scores = collections.defaultdict(dict)
         for line in output:
