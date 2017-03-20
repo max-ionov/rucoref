@@ -64,7 +64,7 @@ class BaseClassifier(object):
             print 'Data is not loaded. Use prepare_data() before calling this function'
 
         if sampler:
-            x_train, y_train = sampler.fit_transform(np.array(self.x_data_train), np.array(self.y_data_train))
+            x_train, y_train = sampler.fit_sample(np.array(self.x_data_train), np.array(self.y_data_train))
         else:
             x_train, y_train = self.x_data_train, self.y_data_train
 

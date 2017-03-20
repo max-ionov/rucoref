@@ -3,6 +3,7 @@ import collections
 from .. import utils
 from ..corpora import base
 
+
 class RuCorefCorpus(base.Corpus):
     def __init__(self, tagset, format):
         super(RuCorefCorpus, self).__init__(tagset, format)
@@ -17,12 +18,18 @@ class RuCorefCorpus(base.Corpus):
 
         with (codecs.open(filename, encoding='utf-8')) as inp_file:
             fields = inp_file.readline().strip('\r\n').split('\t')
+            load_syntax = 'head' in fields and 'rel' in fields
+            if load_syntax:
+                self.parses = []
+
             for line in inp_file:
                 word = {pair[0]: pair[1] for pair in zip(fields, line.strip('\r\n').split('\t'))}
                 if int(word['doc_id']) > cur_doc:
                     if n_files and len(self.doc_ids) == n_files:
                         break
                     self.texts.append([])
+                    if load_syntax:
+                        self.parses.append([])
                     cur_doc = int(word['doc_id'])
                     self.doc_ids.append(cur_doc)
                 tag = word['gram']
@@ -35,6 +42,8 @@ class RuCorefCorpus(base.Corpus):
                                              prob=1.0,
                                              offset=int(word['shift']),
                                              length=int(word['length'])))
+                if load_syntax:
+                    self.parses[-1].append((int(word['head']), word['rel']))
 
         self.texts_loaded_ = True
 
@@ -89,6 +98,9 @@ class RuCorefCorpus(base.Corpus):
         self.chains_index = []
 
         self.n_errors['gs_mapping'] = 0
+
+        if not self.gs_loaded_:
+            return
 
         for i, text in enumerate(self.texts):
             self.gs_mapping.append({})

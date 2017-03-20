@@ -6,6 +6,7 @@ import re
 
 from .. import utils
 
+
 class Corpus(object):
     def __init__(self, tagset, format):
         self.tagset = tagset
@@ -14,6 +15,8 @@ class Corpus(object):
         self.texts = []
         self.gs = []
         self.doc_ids = []
+        self.parses = None
+
 
         self.groups = []
         self.mentions = []
@@ -55,10 +58,9 @@ class Corpus(object):
         """Fills two class attributes: groups and mentions with lists of all groups and mentions
         (groups that are nouns or pronouns) in texts"""
         if self.texts_loaded():
-            self.groups = [utils.find_groups(text, self.tagset) for text in self.texts]
+            self.groups = [utils.find_groups(text, self.tagset, self.parses[i]) for i, text in enumerate(self.texts)]
             self.mentions = [utils.find_mentions(text, self.tagset) for text in self.texts]
             self.groups_loaded_ = True
-
 
     def create_indices(self):
         """Creates indices that are not corpus-specific"""
@@ -68,11 +70,11 @@ class Corpus(object):
 
         for i, text in enumerate(self.texts):
             self.heads_index.append({})
-            self.words_index.append({text[j].offset: j for j in xrange(len(text))})
+            self.words_index.append({w.offset: j for j, w in enumerate(text)})
 
             if not self.groups_loaded_:
-                self.mentions = [utils.find_mentions(text, self.tagset) for text in self.texts]
-            self.mentions_index.append({self.mentions[i][j].offset: j for j in xrange(len(self.mentions[i]))})
+                self.mentions.append(utils.find_mentions(text, self.tagset))
+            self.mentions_index.append({mention.offset: j for j, mention in enumerate(self.mentions[i])})
 
             if self.groups_loaded_:
                 for group in self.groups[i]:

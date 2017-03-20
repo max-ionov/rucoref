@@ -1,6 +1,10 @@
 #!/usr/bin/python2.7
 # -!- coding: utf-8 -!-
 
+import collections
+import itertools
+
+
 class Word(object):
     def __init__(self, wordform, lemma, tag, prob, offset, length):
         self.wordform = wordform if isinstance(wordform, list) else [wordform]
@@ -15,7 +19,6 @@ class Word(object):
 
     def head_offset(self):
         return self.offset
-
 
     def __str__(self):
         return u'{wordform}:{lemma}({tag}, {offset})'.format(lemma=' '.join(self.lemma),
@@ -34,6 +37,7 @@ class Word(object):
     def iter_groups(self):
         yield self #(self.offset, self.length, self.tag, True)
 
+
 class Group(Word):
     def __init__(self, wordform, lemma, tag, tags, prob, offset, length, head, type, words):
         super(Group, self).__init__(wordform, lemma, tag, prob, offset, length)
@@ -51,6 +55,7 @@ class Group(Word):
 
     def head_offset(self):
         return self.words[self.head].offset
+
 
 def try_group(word1, word2, tagset):
     group = None
@@ -96,7 +101,53 @@ def try_conjunction(word1, conj, word2, tagset):
         if tag else None
 
 
-def find_groups(text, tagset):
+def find_groups_syntax(text, tagset, parses):
+    nps = []
+
+    def get_dependencies_recursive(i):
+        res = {i}
+        if i in dep_ind:
+            for j in dep_ind[i]:
+                if tagset.is_np_dependency(text[i], text[j[0]], j[1]):
+                    res |= get_dependencies_recursive(j[0])
+        return res
+
+    def build_dependency_index():
+        dependencies = collections.defaultdict(set)
+        for w2_ind, word2 in enumerate(text):
+            w1_ind = parses[w2_ind][0] - 1
+            rel = parses[w2_ind][1]
+
+            if w1_ind != -1:
+                dependencies[w1_ind].add((w2_ind, rel))
+        return dependencies
+
+    dep_ind = build_dependency_index()
+    for i, word in enumerate(text):
+        if tagset.is_np_head(word):
+            np_words = sorted(get_dependencies_recursive(i))
+            while np_words and tagset.pos_filters['punctuation'](text[np_words[-1]]):
+                np_words.pop()
+            np_head = np_words.index(i)
+            np_words = [text[w] for w in np_words]
+            nps.append(Group(wordform=list(itertools.chain.from_iterable(w.wordform for w in np_words)),
+                             lemma=list(itertools.chain.from_iterable(w.lemma for w in np_words)),
+                             tag=np_words[np_head].tag,
+                             tags=[w.tag for w in np_words],
+                             prob=1.0,
+                             offset=np_words[0].offset,
+                             length=np_words[-1].offset + np_words[-1].length - np_words[0].offset,
+                             words=np_words[:],
+                             head=np_head,
+                             type='agr'
+                             ))
+    return nps
+
+
+def find_groups(text, tagset, parses=None):
+    if parses:
+        return find_groups_syntax(text, tagset, parses)
+
     groups = text[:]
     was_merge = True
 
@@ -125,10 +176,12 @@ def find_groups(text, tagset):
 
     return [group for group in groups if group.tag[0].isalpha()]
 
+
 def find_mentions(text, tagset):
     return [word for word in text
             if tagset.pos_filters['noun'](word)
-            or tagset.pos_filters['pronoun'](word)]
+            or tagset.pos_filters['coref_pronoun'](word)]
+
 
 def intersects(group1, group2):
     right1 = group1.offset + group1.length

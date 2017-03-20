@@ -137,5 +137,15 @@ def plot_learning_curve(train_sizes, train_scores, test_scores, filename='learni
 
     return ax
 
+
 def plot_confusion_matrix():
     pass
+
+
+def load_corpus(corpus, texts_path, gs_path):
+    corpus.load_texts(texts_path)
+    corpus.load_gs(gs_path)
+    corpus.find_groups()
+    corpus.create_indices()
+
+    corpus.print_stats()

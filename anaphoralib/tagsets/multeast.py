@@ -10,6 +10,7 @@ pos_filters = {
     'adj': lambda x: x.tag.startswith('A'),# or x.tag.startswith('R'),
     'properNoun': lambda x: x.tag.startswith('Np'),
     'pronoun': lambda x: x.tag.startswith('P') and x.tag != 'P-----r',
+    'coref_pronoun': lambda x: x.wordform[0].lower() in coref_pronouns and x.tag.startswith('P'),
     'comma': lambda x: x.tag.startswith(','),
     'prep': lambda x: x.tag.startswith('S'),
     'insideQuote': lambda x: x.tag.startswith('Fra') or x.tag.startswith('QuO'),
@@ -19,7 +20,9 @@ pos_filters = {
     #    x.tag.startswith('A') and x.tag[5] in ['F', 'S']),  # 'conj': lambda x: x.tag == 'C0' or x.tag == 'Fc'
     'conj': lambda x: x.tag.startswith('C'),
     'quant': lambda x: x.tag.startswith('M'),
-    'verb': lambda x: x.tag.startswith('V')
+    'verb': lambda x: x.tag.startswith('V'),
+    'interjection': lambda x: x.tag.startswith('I'),
+    'punctuation': lambda x: not x.tag[0].isalpha() or x.tag == 'SENT'
 }
 
 agreement_tests = {
@@ -27,7 +30,7 @@ agreement_tests = {
     'Va+N': lambda verb, noun: verb.tag.startswith('Vmp') and
                                verb.tag[8] == 'f' and
                                (noun.tag == 'Nc' or verb.tag[5] == noun.tag[3]),
-    'PradjNoun': lambda pronoun, noun: pronoun.tag[6] == 'a' and pronoun.tag[4] == noun.tag[3],
+    'PradjNoun': lambda pronoun, noun: len(pronoun.tag) > 6 and pronoun.tag[6] == 'a' and pronoun.tag[4] == noun.tag[3],
     'Q+N': lambda quant, noun: quant.tag[1] == 'o' and
                                (quant.tag[3] == noun.tag[3]) or (len(quant.tag) > 3 and quant.tag[3] == '-'),
     'N+NGen': lambda noun, noun_gen: len(noun_gen.tag) > 4 and noun_gen.tag[4] == 'g',
@@ -86,8 +89,41 @@ features = {
     'A': ['type', 'degree', 'gender', 'number', 'case', 'definiteness'],
     'P': ['type', 'person', 'gender', 'number', 'case', 'synt_type', 'animate']
 }
+
+
 def extract_feature(name, word):
     pos = word.tag[0]
     return word.tag[features[pos].index(name) + 1] \
         if pos in features and name in features[pos] and features[pos].index(name) + 1 < len(word.tag) \
         else None
+
+
+def is_np_dependency(w1, w2, rel):
+    res = True
+
+    # filtering participials
+    res &= not pos_filters['verb'](w2)
+
+    # filtering interjections and other useless parts of speech
+    res &= not (pos_filters['interjection'](w1) or pos_filters['interjection'](w2))
+    res &= not (pos_filters['conj'](w2) and rel in (u'сравнит', u'примыкат'))
+    res &= not (w2.tag == 'Q' and rel in (u'огранич',))
+
+    # filtering bad roles
+    res &= not rel == u'предик'
+
+    return res
+
+
+def is_np_head(word):
+    return word.tag.startswith('N') or (word.wordform[0].lower() in coref_pronouns and word.tag.startswith('P'))
+
+
+coref_pronouns = {u"его", u"ее", u"её", u"ей", u"ему", u"ею", u"им", u"ими", u"их",
+                  u"которая", u"которого", u"которое", u"которой", u"котором", u"которому", u"которую",
+                  u"которые", u"который", u"которым", u"которыми", u"которых",
+                  u"него", u"нее", u"неё", u"ней", u"нем", u"нём", u"нему", u"нею", u"ним", u"ними", u"них",
+                  u"он", u"она", u"они", u"оно", u"я",
+                  u"свое", u"своё", u"своего", u"своей", u"своем", u"своём", u"своему",
+                  u"своею", u"свой", u"свои", u"своим", u"своими", u"своих", u"свою",
+                  u"своя", u"себе", u"себя", u"собой", u"собою"}
