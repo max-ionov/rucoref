@@ -14,7 +14,7 @@ class RuCorefCorpus(base.Corpus):
         self.texts = []
         self.doc_ids = []
 
-        cur_doc = None
+        cur_doc = 0
 
         with (codecs.open(filename, encoding='utf-8')) as inp_file:
             fields = inp_file.readline().strip('\r\n').split('\t')
@@ -51,7 +51,7 @@ class RuCorefCorpus(base.Corpus):
         self.gs = []
         self.gs_doc_ids = []
 
-        cur_doc = None
+        cur_doc = 0
 
         with (codecs.open(filename, encoding='utf-8')) as inp_file:
             fields = inp_file.readline().strip('\r\n').split('\t')

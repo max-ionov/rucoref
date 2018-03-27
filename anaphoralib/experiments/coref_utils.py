@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import codecs
 from .. import utils
 
@@ -5,32 +8,32 @@ from .. import utils
 def print_chain(chain, groups):
     for elem_id in chain:
         elem = groups[elem_id]
-        print elem
+        print (elem)
 
 
 # TODO: Fixme
 def print_chains_in_text(corpus, i_text, test_chains, gold_mentions):
-    print '-- SYS --'
+    print('-- SYS --')
     for chain_id in test_chains[i_text]:
         print_chain(test_chains[i_text][chain_id], gold_mentions[i_text])
-        print
+        print()
 
-    print '\n\n-- GS --'
+    print('\n\n-- GS --')
     for chain_id in corpus.gs[i_text]['chains'].keys():
         gs_mentions, gs_group_ids = get_gs_groups(corpus)
         cur_gs_chain = {key: [gs_group_ids[i_text].index(item) for item in val]
                         for key, val in corpus.gs[i_text]['chains'].items()}
         print_chain(cur_gs_chain[chain_id], gs_mentions[i_text])
-        print
+        print()
 
 
 def get_score_table(clf, corpus, mentions, groups, heads_only=False):
-    print r'\textsc{{{}}} & '.format(clf.__class__.__name__),
+    print(r'\textsc{{{}}} & '.format(clf.__class__.__name__), end='')
     scores, _, _ = clf.score(corpus, mentions, groups, metrics=('muc', 'bcub', 'ceafm'), heads_only=heads_only)
-    print '${:.2f}$'.format(float(scores['muc']['Identification of Mentions'][2])),
+    print('${:.2f}$'.format(float(scores['muc']['Identification of Mentions'][2])), end='')
     for metric in ('muc', 'bcub'):
-        print ''.join(' & ${:.2f}$'.format(float(score)) for score in scores[metric]['Coreference']),
-    print r' & ${:.2f}$ \\'.format(float(scores['ceafm']['Coreference'][2]))
+        print(''.join(' & ${:.2f}$'.format(float(score)) for score in scores[metric]['Coreference']), end='')
+    print(r' & ${:.2f}$ \\'.format(float(scores['ceafm']['Coreference'][2])))
 
 
 def dump_groups(groups, filename):
@@ -73,7 +76,9 @@ def get_gs_groups(corpus):
     for i, text in enumerate(corpus.texts):
         groups.append([])
         group_ids.append([])
-        for group_id in sorted(corpus.gs[i]['groups'], key=lambda g: corpus.gs[i]['groups'][g]['head_shift']):
+        for group_id in sorted(corpus.gs[i]['groups'],
+                               key=lambda g: (corpus.gs[i]['groups'][g]['head_shift'],
+                                              len(corpus.gs[i]['groups'][g]['tokens_shifts']))):
             group = corpus.gs[i]['groups'][group_id]
             words = [text[corpus.words_index[i][shift]] for shift in group['tokens_shifts']]
             head = text[corpus.words_index[i][group['head_shift'][0]]]

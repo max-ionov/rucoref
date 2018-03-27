@@ -37,7 +37,7 @@ class BaseClassifier(object):
 
     def is_fitted(self):
         if not self.fitted_:
-            print 'Classifier is not fitted. Use clf.fit() before calling this function'
+            print('Classifier is not fitted. Use clf.fit() before calling this function')
         return self.fitted_
 
     def prepare_data(self, corpus, random_state=42, test_size=0.3):
@@ -45,7 +45,7 @@ class BaseClassifier(object):
             self.random_state=random_state
 
         if self.x_data and self.y_data:
-            tmp_x_data = [self.x_data[i] + [self.groups[i]] for i in xrange(len(self.x_data))]
+            tmp_x_data = [self.x_data[i] + [self.groups[i]] for i in range(len(self.x_data))]
 
             tmp_x_data_train,\
             tmp_x_data_test, \
@@ -58,10 +58,9 @@ class BaseClassifier(object):
             self.groups_train = [item[-1] for item in tmp_x_data_train]
             self.groups_test = [item[-1] for item in tmp_x_data_test]
 
-
     def fit(self, clf, sampler=None):
         if not self.x_data:
-            print 'Data is not loaded. Use prepare_data() before calling this function'
+            print('Data is not loaded. Use prepare_data() before calling this function')
 
         if sampler:
             x_train, y_train = sampler.fit_sample(np.array(self.x_data_train), np.array(self.y_data_train))
@@ -100,19 +99,18 @@ class BaseClassifier(object):
 
     def print_stats(self):
         if not self.clf_:
-            print "Classifier is not loaded"
+            print('Classifier is not loaded')
         else:
-            print "Classifier {clf}: {is_fitted}fitted".format(clf=self.clf_.__class__,
-                                                           is_fitted="" if self.fitted_ else "not ")
+            print('Classifier {clf}: {is_fitted}fitted'.format(clf=self.clf_.__class__,
+                                                               is_fitted="" if self.fitted_ else "not "))
         if not self.x_data:
-            print "Data is not loaded"
+            print('Data is not loaded')
         else:
-            print "Data: {} ({})\nTotal:\t{} samples".format(self.cur_data_,
-                                                            ', '.join(self.class_names_),
-                                                            len(self.x_data))
+            print('Data: {} ({})\nTotal:\t{} samples'.format(self.cur_data_,
+                                                             ', '.join(self.class_names_),
+                                                             len(self.x_data)))
             for i, class_name in enumerate(self.class_names_):
-                print "\t{n} {cls}".format(cls=class_name, n=sum(1 for item in self.y_data if item == i))
-
+                print('\t{n} {cls}'.format(cls=class_name, n=sum(1 for item in self.y_data if item == i)))
 
     def get_feature_importances(self):
         pass

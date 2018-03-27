@@ -7,6 +7,7 @@ from math import sqrt
 
 SPINE_COLOR = 'gray'
 
+
 def latexify(fig_width=None, fig_height=None, columns=1):
     """Set up matplotlib's RC params for LaTeX plotting.
     Call this before plotting a figure.
@@ -39,7 +40,7 @@ def latexify(fig_width=None, fig_height=None, columns=1):
         fig_height = MAX_HEIGHT_INCHES
 
     params = {'backend': 'ps',
-              'text.latex.preamble': ['\usepackage{gensymb}'],
+              'text.latex.preamble': [r'\usepackage{gensymb}'],
               'axes.labelsize': 8, # fontsize for x and y labels (was 10)
               'axes.titlesize': 8,
               'text.fontsize': 8, # was 10
@@ -71,6 +72,7 @@ def format_axes(ax):
 
     return ax
 
+
 def plot_feature_distribution(distribution, bins, class_names, x_label='Feature value', filename='plot.pdf'):
     fig = plt.figure()
 
@@ -100,6 +102,7 @@ def plot_feature_distribution(distribution, bins, class_names, x_label='Feature 
     plt.savefig("{}.pdf".format(filename))
     plt.show()
     plt.close()
+
 
 def plot_learning_curve(train_sizes, train_scores, test_scores, filename='learning_curve_plot', score_name="Score"):
     ax = plt.gca()

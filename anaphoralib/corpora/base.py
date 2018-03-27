@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import collections
 import os
 import codecs
@@ -16,7 +18,6 @@ class Corpus(object):
         self.gs = []
         self.doc_ids = []
         self.parses = None
-
 
         self.groups = []
         self.mentions = []
@@ -97,13 +98,13 @@ class Corpus(object):
         n_chains = sum(len(text['chains']) for text in self.gs)
         n_words = sum(sum(len(text['chains'][chain]) for chain in text['chains']) for text in self.gs)
 
-        print 'Number of texts: {n_texts}\n' \
-              'Number of GS texts: {n_gs}\n' \
-              'Number of chains in a corpus: {n_chains}\n' \
+        print('Number of texts: {n_texts}\n'
+              'Number of GS texts: {n_gs}\n'
+              'Number of chains in a corpus: {n_chains}\n'
               'Number of words in all chains: {n_words}'.format(n_texts=len(self.texts),
                                                                 n_gs=len(self.gs),
                                                                 n_chains=n_chains,
-                                                                n_words=n_words)
+                                                                n_words=n_words))
 
     def export_conll(self, filename, groups=None, chains=None):
         """Saves the corpus annotation in the CONLL-2012 shared task format"""
@@ -128,7 +129,7 @@ class Corpus(object):
 
                 group_shifts_index = set()
 
-                for i_group, group_id in enumerate(groups[i_text]):
+                for i_group, group_id in enumerate(sorted(groups[i_text])):
                     group = groups[i_text][group_id]
                     # CoNLL coreference scheme allows only one annotation for a coreference relation
                     # so we need to make sure there are no doubles (there are some in the corpus)
@@ -146,18 +147,16 @@ class Corpus(object):
                     if i_word in words_chains_index:
                         group_ids = words_chains_index[i_word]
                         group_starts = [i_word in words_chains_starts and group_id in words_chains_starts[i_word]
-                                        for group_id in group_ids]
+                                        for group_id in sorted(group_ids)]
                         group_ends = [i_word in words_chains_ends and group_id in words_chains_ends[i_word]
-                                      for group_id in group_ids]
+                                      for group_id in sorted(group_ids)]
 
                         coref_mark = '|'.join('{}{}{}'.format('(' if group_starts[i] else '',
                                                               chains_index[i_text][group_id],
                                                               ')' if group_ends[i] else '')
-                                              for i, group_id in enumerate(group_ids))
+                                              for i, group_id in enumerate(sorted(group_ids)))
                     out_file.write(u'{}\t{}\t{}\n{}'.format(doc_name, i_text, coref_mark, '\n' if word.tag == 'SENT' else ''))
                 out_file.write('#end document\n')
-
-
 
     def export_brat(self, path):
         """Saves the corpus text and annotation in the BRAT format in the provided path"""
@@ -197,10 +196,10 @@ class Corpus(object):
                     if len(group_wf) > group.length:
                         group_wf = ''.join(group.wordform)
 
-                    out_file.write(u'T{ann_id}\tNP {offset} {end}\t{token}\n'.format(ann_id=i_group,
-                                                                                     offset=group.offset,
-                                                                                     end=group.offset+group.length,
-                                                                                     token=group_wf))
+                    out_file.write('T{ann_id}\tNP {offset} {end}\t{token}\n'.format(ann_id=i_group,
+                                                                                    offset=group.offset,
+                                                                                    end=group.offset+group.length,
+                                                                                    token=group_wf))
                 # saving relations
                 for i_group, group_id in enumerate(self.gs[i_text]['groups']):
                     group = self.gs[i_text]['groups'][group_id]
@@ -210,14 +209,14 @@ class Corpus(object):
                     group_type = 'DiscNew' if group['parent'] == 0 else 'DiscOld'
                     group_text = self._get_group_text(i_text, group)
 
-                    out_file.write(u'T{ann_id}\t{type} {offset} {end}\t{token}\n'.format(ann_id=ann_id,
-                                                                                          offset=group_shift,
-                                                                                          end=group_end,
-                                                                                          type=group_type,
-                                                                                          token=group_text))
+                    out_file.write('T{ann_id}\t{type} {offset} {end}\t{token}\n'.format(ann_id=ann_id,
+                                                                                        offset=group_shift,
+                                                                                        end=group_end,
+                                                                                        type=group_type,
+                                                                                        token=group_text))
                     for attr in group['attributes']:
                         attr_val = group['attributes'][attr] if group['attributes'][attr] else '?'
-                        out_file.write(u'A{attr_id}\t{attr} T{ann_id} {val}\n'.format(attr_id=attr_id,
+                        out_file.write('A{attr_id}\t{attr} T{ann_id} {val}\n'.format(attr_id=attr_id,
                                                                                      attr=attr,
                                                                                      ann_id=ann_id,
                                                                                      val=attr_val))
@@ -234,9 +233,9 @@ class Corpus(object):
 
                     arg1 = groups_annotations_ids[relation[0]]
                     arg2 = groups_annotations_ids[relation[1]]
-                    out_file.write(u'R{rel_id}\tCoreference Arg1:T{arg_1} Arg2:T{arg_2}\n'.format(rel_id=i_relation,
-                                                                                                arg_1=arg1,
-                                                                                                arg_2=arg2))
+                    out_file.write('R{rel_id}\tCoreference Arg1:T{arg_1} Arg2:T{arg_2}\n'.format(rel_id=i_relation,
+                                                                                                 arg_1=arg1,
+                                                                                                 arg_2=arg2))
 
     def _get_group_text(self, i_text, group):
         group_words = [self.texts[i_text][self.words_index[i_text][offset]].wordform[0]
@@ -244,7 +243,7 @@ class Corpus(object):
         start_offset = group['tokens_shifts'][0]
         group_text = u''
         for i_word, word in enumerate(group_words[:-1]):
-            group_text += word + u' ' * (group['tokens_shifts'][i_word + 1] - group['tokens_shifts'][i_word] - len(word))
+            group_text += word + ' ' * (group['tokens_shifts'][i_word + 1] - group['tokens_shifts'][i_word] - len(word))
 
         return group_text + group_words[-1]
 
@@ -265,7 +264,6 @@ class Corpus(object):
                 continue
             for i_mention, mention in enumerate(self.mentions[i_text]):
                 yield i_text, i_mention, self.mentions[i_text][i_mention]
-
 
     def are_coreferent(self, group1, group2):
         """Returns true if two groups are coreferent"""
@@ -298,7 +296,7 @@ class Corpus(object):
             self.export_conll(tmp_file_gold)
         self.export_conll(tmp_file_test, groups=groups, chains=chains)
 
-        output = subprocess.check_output(scorer_params).split('\n')
+        output = subprocess.check_output(scorer_params).decode('utf-8').split('\n')
 
         #os.remove(tmp_file_gold)
         #os.remove(tmp_file_test)

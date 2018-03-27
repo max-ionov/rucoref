@@ -132,7 +132,7 @@ class MentionPairClassifier(object):
     def convert_chains_to_groups(self, coref_chains, mentions, heads_only=False):
         groups = {}
 
-        for i_chain in sorted(coref_chains):
+        for i_chain in sorted(coref_chains.keys()):
             for i_group, group_id in enumerate(coref_chains[i_chain]):
                 parent = coref_chains[i_chain][i_group - 1] if i_group > 0 else 0
                 group = mentions[group_id]
@@ -161,7 +161,7 @@ class MentionPairClassifier(object):
 
         for pair in pairs:
             chains_set.add(mentions.index(pair[0]), mentions.index(pair[1]))
-        for i_chain, chain in enumerate(chains_set.group.values()):
+        for i_chain, chain in enumerate(list(chains_set.group.values())):
             chains[i_chain + 1] = sorted(chain)
         groups = self.convert_chains_to_groups(chains, mentions, return_heads_only)
 

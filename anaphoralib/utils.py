@@ -1,10 +1,11 @@
-#!/usr/bin/python2.7
-# -!- coding: utf-8 -!-
+from __future__ import unicode_literals
+from future.utils import python_2_unicode_compatible
 
 import collections
 import itertools
 
 
+@python_2_unicode_compatible
 class Word(object):
     def __init__(self, wordform, lemma, tag, prob, offset, length):
         self.wordform = wordform if isinstance(wordform, list) else [wordform]
@@ -21,18 +22,19 @@ class Word(object):
         return self.offset
 
     def __str__(self):
-        return u'{wordform}:{lemma}({tag}, {offset})'.format(lemma=' '.join(self.lemma),
-                                                             wordform=' '.join(self.wordform),
+        return u'{wordform}:{lemma}({tag}, {offset})'.format(lemma=u' '.join(self.lemma),
+                                                             wordform=u' '.join(self.wordform),
                                                              tag=self.tag,
                                                              type=self.type,
-                                                             offset=self.offset).encode('utf-8')
+                                                             offset=self.offset)
 
     def __repr__(self):
-        return u'{wordform}({tag}, {offset})'.format(lemma=' '.join(self.lemma),
-                                                     wordform=' '.join(self.wordform),
-                                                     tag=self.tag,
-                                                     type=self.type,
-                                                     offset=self.offset).encode('utf-8')
+        return str(self)
+        # return u'REPR:{wordform}({tag}, {offset})'.format(lemma=u' '.join(self.lemma),
+        #                                              wordform=u' '.join(self.wordform),
+        #                                              tag=self.tag,
+        #                                              type=self.type,
+        #                                              offset=self.offset)
 
     def iter_groups(self):
         yield self #(self.offset, self.length, self.tag, True)
@@ -64,7 +66,7 @@ def try_group(word1, word2, tagset):
         try:
             res = tagset.agreement_filters[agr](word1, word2)
         except IndexError:
-            print word1, word2
+            print (word1, word2)
             raise
         if res:
             group, head = res
