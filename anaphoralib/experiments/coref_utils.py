@@ -8,7 +8,7 @@ from .. import utils
 def print_chain(chain, groups):
     for elem_id in chain:
         elem = groups[elem_id]
-        print (elem)
+        print(elem)
 
 
 # TODO: Fixme

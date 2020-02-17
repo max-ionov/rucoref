@@ -55,11 +55,13 @@ class Corpus(object):
     def load_gs(self, filename):
         pass
 
-    def find_groups(self):
+    def find_groups(self, use_parses=True):
         """Fills two class attributes: groups and mentions with lists of all groups and mentions
         (groups that are nouns or pronouns) in texts"""
         if self.texts_loaded():
-            self.groups = [utils.find_groups(text, self.tagset, self.parses[i]) for i, text in enumerate(self.texts)]
+            parses = self.parses if self.parses and use_parses else False
+            self.groups = [utils.find_groups(text,
+                                             self.tagset, parses) for i, text in enumerate(self.texts)]
             self.mentions = [utils.find_mentions(text, self.tagset) for text in self.texts]
             self.groups_loaded_ = True
 
@@ -108,7 +110,7 @@ class Corpus(object):
 
     def export_conll(self, filename, groups=None, chains=None):
         """Saves the corpus annotation in the CONLL-2012 shared task format"""
-        self.create_indices() # just in case there are no words index yet
+        self.create_indices()  # just in case there are no words index yet
         if not groups:
             groups = [text['groups'] for text in self.gs]
 
@@ -160,14 +162,14 @@ class Corpus(object):
 
     def export_brat(self, path):
         """Saves the corpus text and annotation in the BRAT format in the provided path"""
-        filename_template='{}.txt'
+        filename_template = '{}.txt'
 
         if os.path.exists(path) and not os.path.isdir(path):
             raise AttributeError('Provided path ({}) is not a folder'.format(path))
         if not os.path.exists(path):
             os.mkdir(path)
 
-        self.create_indices() # just in case there are no words index yet
+        self.create_indices()  # just in case there are no words index yet
 
         for i_text, text in enumerate(self.texts):
             filename = os.path.join(path, filename_template.format(i_text))
@@ -188,22 +190,27 @@ class Corpus(object):
             with codecs.open(filename[:-4] + '.ann', 'w', encoding='utf-8') as out_file:
                 mentions = self.get_mentions(i_text)
 
-                for i_group, group in enumerate(mentions):
-                    # there is a bug with tokenization of words with some unicode characters in a corpus:
-                    # some were tokenized as several consecutive words. In this case we should glue
-                    # them without spaces so that offsets are not broken
-                    group_wf = u' '.join(group.wordform)
-                    if len(group_wf) > group.length:
-                        group_wf = ''.join(group.wordform)
-
-                    out_file.write('T{ann_id}\tNP {offset} {end}\t{token}\n'.format(ann_id=i_group,
-                                                                                    offset=group.offset,
-                                                                                    end=group.offset+group.length,
-                                                                                    token=group_wf))
+                # for i_group, group in enumerate(mentions):
+                #     # there is a bug with tokenization of words with some unicode characters in a corpus:
+                #     # some were tokenized as several consecutive words. In this case we should glue
+                #     # them without spaces so that offsets are not broken
+                #     group_wf = u' '.join(group.wordform)
+                #     if len(group_wf) > group.length:
+                #         group_wf = ''.join(group.wordform)
+                #
+                #     out_file.write('T{ann_id}\tNP {offset} {end}\t{token}\n'.format(ann_id=i_group,
+                #                                                                     offset=group.offset,
+                #                                                                     end=group.offset+group.length,
+                #                                                                     token=group_wf))
                 # saving relations
                 for i_group, group_id in enumerate(self.gs[i_text]['groups']):
                     group = self.gs[i_text]['groups'][group_id]
-                    ann_id = i_group + len(mentions)
+                    if 'ref' in group['attributes'] \
+                            and group['attributes']['ref'] \
+                            and group['attributes']['ref'] in ('pred', 'appo'):
+                        continue
+
+                    ann_id = i_group  # + len(mentions)
                     group_shift = group['tokens_shifts'][0]
                     group_end = group_shift + group['length']
                     group_type = 'DiscNew' if group['parent'] == 0 else 'DiscOld'
