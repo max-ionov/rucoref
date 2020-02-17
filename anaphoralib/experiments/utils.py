@@ -43,7 +43,7 @@ def latexify(fig_width=None, fig_height=None, columns=1):
               'text.latex.preamble': [r'\usepackage{gensymb}'],
               'axes.labelsize': 8, # fontsize for x and y labels (was 10)
               'axes.titlesize': 8,
-              'text.fontsize': 8, # was 10
+              'font.size': 8, # was 10
               'legend.fontsize': 8, # was 10
               'xtick.labelsize': 8,
               'ytick.labelsize': 8,
@@ -84,8 +84,8 @@ def plot_feature_distribution(distribution, bins, class_names, x_label='Feature 
 
     normed = True
 
-    true_hist = np.histogram(distribution[class_names[1]], bins, normed=normed)
-    false_hist = np.histogram(distribution[class_names[0]], bins, normed=normed)
+    true_hist = np.histogram(distribution[class_names[1]], bins, density=normed)
+    false_hist = np.histogram(distribution[class_names[0]], bins, density=normed)
 
     w = 0.3
 

@@ -1,5 +1,5 @@
 from sklearn.feature_selection import SelectKBest, SelectPercentile, chi2
-from sklearn import cross_validation
+from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
 import numpy as np
@@ -50,9 +50,9 @@ class BaseClassifier(object):
             tmp_x_data_train,\
             tmp_x_data_test, \
             self.y_data_train, \
-            self.y_data_test = cross_validation.train_test_split(tmp_x_data, self.y_data,
-                                                                 test_size=test_size,
-                                                                 random_state=self.random_state)
+            self.y_data_test = train_test_split(tmp_x_data, self.y_data,
+                                                test_size=test_size,
+                                                random_state=self.random_state)
             self.x_data_train = [item[:-1] for item in tmp_x_data_train]
             self.x_data_test = [item[:-1] for item in tmp_x_data_test]
             self.groups_train = [item[-1] for item in tmp_x_data_train]
